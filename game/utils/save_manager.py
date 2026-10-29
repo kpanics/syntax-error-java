@@ -7,6 +7,9 @@ SAVE_PATH = os.path.join(SAVE_DIR, "save.json")
 DEFAULT_SAVE = {
     "completed_levels": [],
     "current_level": "prologue_01",
+    "chapter_progress": {
+        "ch1": 0, "ch2": 0, "ch3": 0, "ch4": 0, "ch5": 0, "ch6": 0
+    },
     "python_view_unlocked": False,
     "hints_used": {},
     "achievements": []
@@ -19,7 +22,6 @@ def load_save() -> dict:
     try:
         with open(SAVE_PATH, "r", encoding="utf-8") as f:
             data = json.load(f)
-        # Мержим с дефолтом на случай старых сейвов
         for k, v in DEFAULT_SAVE.items():
             data.setdefault(k, v)
         return data
@@ -35,11 +37,18 @@ def write_save(data: dict) -> None:
 
 def complete_level(level_id: str, hints_used: int):
     save = load_save()
+
+    # Добавляем в пройденные, если еще нет
     if level_id not in save["completed_levels"]:
         save["completed_levels"].append(level_id)
+
+        # Инкрементируем прогресс главы
+        chapter_id = level_id.split("_")[0]
+        if chapter_id in save["chapter_progress"]:
+            save["chapter_progress"][chapter_id] += 1
+
     save["hints_used"][level_id] = hints_used
 
-    # Достижение "Без подсказок"
     if hints_used == 0:
         ach = f"no_hints_{level_id}"
         if ach not in save["achievements"]:

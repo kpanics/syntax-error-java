@@ -3,13 +3,11 @@ from game.utils.lexer import SimpleJavaLexer
 
 
 class CodeEditor:
-    def __init__(self, rect, font):
+    def __init__(self, rect, font, initial_text=""):
         self.rect = pygame.Rect(rect)
         self.font = font
-        # Стартовый шаблон, чтобы игрок не гадал, с чего начать
-        self.text = "public class Main {\n    public static void main(String[] args) {\n        \n    }\n}"
-        # Ставим курсор ровно на пустую строку внутри метода main
-        self.cursor_pos = self.text.find("        \n") + 8
+        self.text = initial_text
+        self.cursor_pos = len(self.text)  # По умолчанию в конец
         self.cursor_visible = True
         self.cursor_timer = 0
         self.lexer = SimpleJavaLexer()
@@ -44,6 +42,9 @@ class CodeEditor:
                         self.cursor_pos += len(clean_text)
                     except:
                         pass
+                return False
+
+            if event.key in (pygame.K_LEFT, pygame.K_RIGHT, pygame.K_UP, pygame.K_DOWN):
                 return False
 
             char = ""

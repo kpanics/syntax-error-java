@@ -80,7 +80,7 @@ class PrologueScene02:
         self.engine = engine
         self.font = pygame.font.SysFont("couriernew", 18, bold=True)
         self.font_ui = pygame.font.SysFont("couriernew", 14)
-        self.duke = Duke(era="1995", pos=(50, 600))
+        self.duke = Duke(era="1995", pos=(80, 300))
 
         self.containers = {
             "JDK": pygame.Rect(300, 200, 140, 140),

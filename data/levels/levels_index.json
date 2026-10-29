@@ -1,0 +1,32 @@
+{
+  "chapters": {
+    "ch1": {
+      "title": "1995 — Hello World & The Bytecode Miracle",
+      "era": "1995",
+      "levels": [
+        "ch1_1_first_compile",
+        "ch1_2_primitive_types",
+        "ch1_3_hello_world",
+        "ch1_4_decision_maker",
+        "ch1_5_loop_master",
+        "ch1_6_boss_fizzbuzz"
+      ],
+      "unlock_requirement": null
+    },
+    "ch2": {
+      "title": "2005 — XML Hell & The Enterprise Era",
+      "era": "2005",
+      "levels": [
+        "ch2_1_contract_first",
+        "ch2_2_xml_hell",
+        "ch2_3_bean_lifecycle",
+        "ch2_4_constructor_injection",
+        "ch2_5_boss_five_bean_monolith"
+      ],
+      "unlock_requirement": {
+        "chapter": "ch1",
+        "min_completed_levels": 3
+      }
+    }
+  }
+}

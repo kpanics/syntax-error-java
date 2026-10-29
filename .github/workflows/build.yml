@@ -24,6 +24,7 @@ jobs:
         pip install pygame pyinstaller
 
     - name: Build EXE with PyInstaller
+      working-directory: ./  # <--- ВОТ ЭТА СТРОЧКА РЕШАЕТ ПРОБЛЕМУ С ПУТЯМИ
       run: |
         pyinstaller --noconfirm --windowed --name "SyntaxError" --add-data "assets;assets" --add-data "data;data" --add-data "game;game" main.py
 

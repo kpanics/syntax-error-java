@@ -1,0 +1,951 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Syntax Error: Java in the Python</title>
+<meta name="description" content="Образовательная игра-головоломка, которая учит Java через историю языка (1995–2026). Пиши код, компилируй, узнавай правду.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&family=Fira+Code:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg: #0a0a0c;
+    --bg-alt: #0f1410;
+    --green: #00ff41;
+    --green-dim: #0aa62f;
+    --red: #ff2e3b;
+    --red-dim: #8c1017;
+    --amber: #ffb000;
+    --panel: #0d120d;
+    --border: #103a1a;
+    --header-height: 60px;
+  }
+
+  *{ box-sizing: border-box; }
+
+  html{
+    scroll-behavior: smooth;
+    scroll-padding-top: calc(var(--header-height) + 16px);
+  }
+
+  body{
+    margin: 0;
+    padding-top: var(--header-height);
+    background: var(--bg);
+    color: var(--green);
+    font-family: 'VT323', monospace;
+    font-size: 20px;
+    line-height: 1.5;
+    overflow-x: hidden;
+    position: relative;
+  }
+
+  section[id], [id="download"]{
+    scroll-margin-top: 16px;
+  }
+
+  h1,h2,h3, .pixel-font{
+    font-family: 'Press Start 2P', cursive;
+    line-height: 1.6;
+  }
+
+  code, .code-font{
+    font-family: 'Fira Code', monospace;
+  }
+
+  a{ color: inherit; }
+
+  ::selection{ background: var(--green); color: #000; }
+
+  /* ---------- CRT / Scanlines overlay ---------- */
+  .crt-overlay{
+    pointer-events: none;
+    position: fixed;
+    inset: 0;
+    z-index: 999;
+    background: repeating-linear-gradient(
+      to bottom,
+      rgba(0,0,0,0.0) 0px,
+      rgba(0,0,0,0.0) 1px,
+      rgba(0,0,0,0.25) 2px,
+      rgba(0,0,0,0.0) 3px
+    );
+    mix-blend-mode: multiply;
+    animation: flicker 6s infinite;
+  }
+
+  .crt-vignette{
+    pointer-events:none;
+    position: fixed;
+    inset:0;
+    z-index: 998;
+    background: radial-gradient(ellipse at center, rgba(0,0,0,0) 55%, rgba(0,0,0,0.65) 100%);
+  }
+
+  @keyframes flicker{
+    0%, 100% { opacity: 0.9; }
+    50% { opacity: 1; }
+    52% { opacity: 0.85; }
+    54% { opacity: 1; }
+  }
+
+  .noise-line{
+    position: fixed;
+    left:0; right:0;
+    height: 2px;
+    background: rgba(0,255,65,0.05);
+    z-index: 997;
+    pointer-events: none;
+    animation: scanmove 7s linear infinite;
+  }
+
+  @keyframes scanmove{
+    0%{ top: -5%; }
+    100%{ top: 105%; }
+  }
+
+  /* ---------- Layout helpers ---------- */
+  .wrap{
+    max-width: 1180px;
+    margin: 0 auto;
+    padding: 0 24px;
+  }
+
+  section{ position: relative; z-index: 2; }
+
+  .fade-in{
+    opacity: 0;
+    transform: translateY(40px);
+    transition: opacity 0.8s ease, transform 0.8s ease;
+  }
+  .fade-in.visible{
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  /* ---------- Fixed terminal navbar ---------- */
+  header{
+    position: fixed;
+    inset: 0 0 auto;
+    height: var(--header-height);
+    z-index: 500;
+    background: rgba(10,10,12,0.96);
+    backdrop-filter: blur(4px);
+    border-bottom: 1px solid var(--border);
+  }
+  .nav{
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 24px;
+    height: 100%;
+    width: 100%;
+    max-width: 1180px;
+    margin: 0 auto;
+    padding: 0 24px;
+  }
+  .logo{
+    font-family: 'Press Start 2P', cursive;
+    font-size: 12px;
+    color: var(--green);
+    text-shadow: 0 0 6px var(--green);
+    white-space: nowrap;
+  }
+  .logo span{ color: var(--red); text-shadow: 0 0 6px var(--red); }
+
+  .nav ul{
+    list-style: none;
+    display: flex;
+    align-items: center;
+    gap: 24px;
+    margin: 0;
+    padding: 0;
+    font-size: 18px;
+    line-height: 1.4;
+  }
+  .nav ul li a{
+    display: inline-flex;
+    align-items: center;
+    padding: 4px 0;
+    text-decoration: none;
+    color: var(--green);
+    opacity: 0.85;
+    transition: opacity .2s, text-shadow .2s;
+  }
+  .nav ul li a:hover,
+  .nav ul li a:focus-visible{
+    opacity: 1;
+    text-shadow: 0 0 8px var(--green);
+  }
+
+  .burger{
+    display: none;
+    background: none;
+    border: 1px solid var(--green);
+    color: var(--green);
+    padding: 4px 10px;
+    cursor: pointer;
+    font: inherit;
+    line-height: 1;
+    min-height: 36px;
+  }
+
+  /* ---------- Compact Hero: natural height, no viewport offset ---------- */
+  .hero{
+    position: relative;
+    display: block;
+    min-height: 0;
+    margin: 0;
+    padding: 36px 0 40px;
+    background:
+      radial-gradient(ellipse at 20% 20%, rgba(0,255,65,0.06), transparent 60%),
+      radial-gradient(ellipse at 80% 80%, rgba(255,46,59,0.06), transparent 60%),
+      var(--bg);
+    border-bottom: 1px solid var(--border);
+    overflow: hidden;
+  }
+
+  .hero-grid{
+    display: grid;
+    grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr);
+    align-items: center;
+    gap: 32px;
+    width: 100%;
+    margin: 0 auto;
+  }
+  .hero-text{ min-width: 0; }
+
+  .eyebrow{
+    display: inline-block;
+    font-family: 'Fira Code', monospace;
+    font-size: 12px;
+    color: var(--amber);
+    border: 1px dashed var(--amber);
+    padding: 3px 8px;
+    margin-bottom: 14px;
+    letter-spacing: 1px;
+  }
+
+  .hero h1{
+    font-size: clamp(22px, 3vw, 38px);
+    line-height: 1.5;
+    letter-spacing: -0.04em;
+    color: var(--green);
+    text-shadow: 0 0 6px rgba(0,255,65,0.8), 0 0 18px rgba(0,255,65,0.4);
+    margin: 0 0 16px;
+    overflow-wrap: break-word;
+  }
+  .hero h1 .red{
+    color: var(--red);
+    text-shadow: 0 0 6px rgba(255,46,59,0.8), 0 0 18px rgba(255,46,59,0.4);
+  }
+
+  .typewriter-box{
+    font-family: 'Fira Code', monospace;
+    font-size: clamp(14px, 1.25vw, 16px);
+    line-height: 1.6;
+    color: #c8ffd6;
+    background: rgba(0,255,65,0.04);
+    border-left: 3px solid var(--green);
+    padding: 10px 14px;
+    margin-bottom: 20px;
+    min-height: 72px;
+    overflow-wrap: anywhere;
+  }
+  .typewriter-box .cursor{
+    display: inline-block;
+    width: 8px;
+    height: 1em;
+    background: var(--green);
+    margin-left: 2px;
+    vertical-align: middle;
+    animation: blink 0.9s steps(1) infinite;
+  }
+  @keyframes blink{ 50%{ opacity: 0; } }
+
+  .btn-row{
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+  .hero .btn{
+    min-height: 48px;
+    padding: 12px 18px;
+    font-size: 14px;
+    white-space: nowrap;
+  }
+
+  .btn{
+    font-family: 'Fira Code', monospace;
+    font-size: 15px;
+    font-weight: 600;
+    padding: 16px 22px;
+    background: transparent;
+    border: 2px solid var(--green);
+    color: var(--green);
+    cursor: pointer;
+    text-decoration:none;
+    display:inline-flex;
+    align-items:center;
+    gap: 10px;
+    position:relative;
+    letter-spacing: 0.5px;
+    transition: all .25s ease;
+    overflow:hidden;
+  }
+  .btn::before{
+    content:"";
+    position:absolute;
+    top:0; left:-100%;
+    width:100%; height:100%;
+    background: linear-gradient(120deg, transparent, rgba(0,255,65,0.35), transparent);
+    transition: left .5s;
+  }
+  .btn:hover::before{ left: 100%; }
+  .btn:hover{
+    background: rgba(0,255,65,0.08);
+    box-shadow: 0 0 10px var(--green), 0 0 30px rgba(0,255,65,0.4), inset 0 0 12px rgba(0,255,65,0.3);
+    transform: translateY(-2px);
+  }
+  .btn:active{ transform: translateY(0); }
+
+  .btn.red{
+    border-color: var(--red);
+    color: var(--red);
+  }
+  .btn.red::before{
+    background: linear-gradient(120deg, transparent, rgba(255,46,59,0.35), transparent);
+  }
+  .btn.red:hover{
+    background: rgba(255,46,59,0.08);
+    box-shadow: 0 0 10px var(--red), 0 0 30px rgba(255,46,59,0.4), inset 0 0 12px rgba(255,46,59,0.3);
+  }
+
+  .hero-art{
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    min-width: 0;
+    margin: 0;
+    position: relative;
+  }
+
+  .duke-frame{
+    position: relative;
+    flex: none;
+    width: 100%;
+    max-width: 280px;
+    aspect-ratio: 1 / 1;
+    border: 2px solid var(--green);
+    background:
+      linear-gradient(180deg, rgba(0,255,65,0.05), rgba(0,0,0,0.2)),
+      repeating-linear-gradient(45deg, rgba(0,255,65,0.03) 0 2px, transparent 2px 10px);
+    box-shadow: 0 0 25px rgba(0,255,65,0.25), inset 0 0 25px rgba(0,255,65,0.08);
+    image-rendering: pixelated;
+  }
+  .duke-frame::before{
+    content: "> DUKE_v1.0";
+    position: absolute;
+    top: -14px;
+    left: 12px;
+    z-index: 1;
+    background: var(--bg);
+    padding: 0 8px;
+    font-family: 'Fira Code', monospace;
+    font-size: 12px;
+    color: var(--amber);
+  }
+  #duke-sprite{
+    position: absolute;
+    inset: 10px;
+    display: block;
+    width: calc(100% - 20px);
+    height: calc(100% - 20px);
+    object-fit: contain;
+    image-rendering: pixelated;
+    background: transparent;
+  }
+
+  .scroll-cue{
+    text-align: center;
+    margin: 0;
+    font-family: 'Fira Code', monospace;
+    font-size: 12px;
+    color: var(--green-dim);
+    letter-spacing: 2px;
+  }
+
+  /* ---------- Section titles ---------- */
+  .section-title{
+    font-size: clamp(20px, 3vw, 32px);
+    text-align:center;
+    margin-bottom: 14px;
+    color: var(--green);
+    text-shadow: 0 0 10px rgba(0,255,65,0.5);
+  }
+  .section-sub{
+    text-align:center;
+    max-width: 700px;
+    margin: 0 auto 50px;
+    color: #9fffb8;
+    font-size: 22px;
+  }
+
+  /* ---------- About ---------- */
+  .about{
+    padding: 100px 0;
+    background: var(--bg-alt);
+    border-bottom: 1px solid var(--border);
+  }
+  .about-grid{
+    display:grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 50px;
+    align-items:center;
+  }
+  .terminal-card{
+    background: #000;
+    border: 1px solid var(--green-dim);
+    border-radius: 6px;
+    box-shadow: 0 0 30px rgba(0,255,65,0.15);
+    overflow:hidden;
+  }
+  .terminal-bar{
+    background: #111;
+    padding: 8px 12px;
+    display:flex;
+    gap:6px;
+    border-bottom: 1px solid var(--green-dim);
+  }
+  .dot{ width:10px; height:10px; border-radius:50%; }
+  .dot.red{ background: var(--red); }
+  .dot.amber{ background: var(--amber); }
+  .dot.green{ background: var(--green); }
+  .terminal-body{
+    padding: 18px 20px;
+    font-family:'Fira Code', monospace;
+    font-size: 14px;
+    color: var(--green);
+    min-height: 220px;
+  }
+  .terminal-body .muted{ color: #668f72; }
+  .terminal-body .err{ color: var(--red); }
+
+  .about-text p{
+    font-size: 23px;
+    margin-bottom: 18px;
+    color: #d6ffe0;
+  }
+  .about-text strong{ color: var(--amber); }
+
+  /* ---------- Features ---------- */
+  .features{
+    padding: 100px 0;
+    background: var(--bg);
+  }
+  .features-grid{
+    display:grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 28px;
+  }
+  .feature-card{
+    background: var(--panel);
+    border: 1px solid var(--border);
+    padding: 34px 26px;
+    text-align:center;
+    transition: transform .3s, box-shadow .3s, border-color .3s;
+    position:relative;
+  }
+  .feature-card:hover{
+    transform: translateY(-8px);
+    border-color: var(--green);
+    box-shadow: 0 10px 30px rgba(0,255,65,0.15), 0 0 25px rgba(0,255,65,0.15);
+  }
+  .feature-icon{
+    width: 64px;
+    height: 64px;
+    margin: 0 auto 20px;
+    color: var(--green);
+    filter: drop-shadow(0 0 8px rgba(0,255,65,0.6));
+  }
+  .feature-card:nth-child(2) .feature-icon{ color: var(--amber); filter: drop-shadow(0 0 8px rgba(255,176,0,0.6)); }
+  .feature-card:nth-child(3) .feature-icon{ color: var(--red); filter: drop-shadow(0 0 8px rgba(255,46,59,0.6)); }
+
+  .feature-card h3{
+    font-size: 16px;
+    margin-bottom: 14px;
+    color: inherit;
+  }
+  .feature-card p{
+    font-size: 20px;
+    color: #b7f5c4;
+  }
+
+  /* ---------- Eras timeline teaser ---------- */
+  .timeline{
+    padding: 80px 0 100px;
+    background: var(--bg-alt);
+    border-top: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
+    overflow-x: auto;
+  }
+  .timeline-track{
+    display:flex;
+    gap: 0;
+    min-width: 900px;
+    position: relative;
+    padding: 0 10px;
+  }
+  .timeline-track::before{
+    content:"";
+    position:absolute;
+    top: 28px;
+    left: 0; right: 0;
+    height: 2px;
+    background: var(--green-dim);
+  }
+  .era{
+    flex: 1;
+    text-align:center;
+    position:relative;
+    padding-top: 50px;
+  }
+  .era::before{
+    content:"";
+    position:absolute;
+    top: 20px; left: 50%;
+    transform: translateX(-50%);
+    width: 16px; height: 16px;
+    background: var(--bg-alt);
+    border: 2px solid var(--green);
+    border-radius: 50%;
+    box-shadow: 0 0 10px var(--green);
+  }
+  .era .year{
+    font-family:'Press Start 2P', cursive;
+    font-size: 11px;
+    color: var(--amber);
+    margin-bottom: 8px;
+  }
+  .era .label{
+    font-size: 18px;
+    color: #cdeed6;
+    padding: 0 6px;
+  }
+
+  /* ---------- CTA ---------- */
+  .cta{
+    padding: 100px 0;
+    text-align:center;
+    background:
+      radial-gradient(circle at center, rgba(0,255,65,0.08), transparent 60%),
+      var(--bg);
+  }
+  .cta h2{
+    font-size: clamp(20px,3vw,30px);
+    margin-bottom: 24px;
+  }
+  .cta p{ font-size: 22px; color:#b7f5c4; margin-bottom: 34px; }
+
+  /* ---------- Footer ---------- */
+  footer{
+    background: #060607;
+    border-top: 1px solid var(--border);
+    padding: 50px 0 30px;
+  }
+  .footer-grid{
+    display:flex;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 30px;
+    margin-bottom: 30px;
+  }
+  .footer-brand .logo{ margin-bottom: 10px; }
+  .footer-brand p{ color: #668f72; font-size: 18px; max-width: 320px; }
+
+  .footer-links{
+    display:flex;
+    gap: 60px;
+    flex-wrap: wrap;
+  }
+  .footer-col h4{
+    font-family:'Press Start 2P', cursive;
+    font-size: 12px;
+    color: var(--amber);
+    margin-bottom: 16px;
+  }
+  .footer-col ul{ list-style:none; padding:0; margin:0; }
+  .footer-col ul li{ margin-bottom: 10px; }
+  .footer-col ul li a{
+    text-decoration:none;
+    font-size: 19px;
+    color: var(--green);
+    opacity: 0.85;
+    display:inline-flex;
+    align-items:center;
+    gap: 8px;
+    transition: opacity .2s, text-shadow .2s, transform .2s;
+  }
+  .footer-col ul li a:hover{
+    opacity:1;
+    text-shadow: 0 0 8px var(--green);
+    transform: translateX(4px);
+  }
+  .footer-col ul li a svg{ width: 18px; height: 18px; }
+
+  .footer-bottom{
+    border-top: 1px dashed var(--border);
+    padding-top: 20px;
+    text-align:center;
+    font-family:'Fira Code', monospace;
+    font-size: 13px;
+    color: #4a6a52;
+  }
+
+  /* ---------- Compact, text-first responsive layout ---------- */
+  @media (max-width: 900px){
+    .hero{ padding: 28px 0 32px; }
+    .hero-grid{
+      grid-template-columns: minmax(0, 1fr);
+      align-items: start;
+      gap: 24px;
+    }
+    .hero-text{ width: 100%; }
+    .hero h1{ font-size: clamp(24px, 4.5vw, 38px); }
+    .hero-art{ order: 0; }
+    .duke-frame{ max-width: 160px; }
+    .about-grid{ grid-template-columns: 1fr; }
+    .features-grid{ grid-template-columns: 1fr 1fr; }
+  }
+
+  @media (max-width: 640px){
+    :root{ --header-height: 56px; }
+    body{ font-size: 18px; }
+    .wrap, .nav{ padding-left: 20px; padding-right: 20px; }
+    .hero{ padding: 24px 0 28px; }
+    .hero h1{
+      font-size: clamp(18px, 5vw, 28px);
+      line-height: 1.45;
+    }
+    .hero .eyebrow{ font-size: 10px; }
+    .typewriter-box{ min-height: 72px; }
+    .hero .btn-row{ gap: 10px; }
+    .nav ul{
+      position: absolute;
+      top: 100%;
+      left: 0;
+      right: 0;
+      display: none;
+      align-items: stretch;
+      gap: 0;
+      padding: 8px 20px 12px;
+      background: rgba(5,5,6,0.98);
+      border-bottom: 1px solid var(--border);
+      flex-direction: column;
+    }
+    .nav ul.open{ display: flex; }
+    .nav ul li a{ width: 100%; padding: 10px 0; }
+    .burger{ display: inline-flex; align-items: center; justify-content: center; }
+    .features-grid{ grid-template-columns: 1fr; }
+    .btn{ width: 100%; justify-content: center; }
+    .btn-row{ flex-direction: column; }
+    .duke-frame{ max-width: 160px; }
+  }
+
+  @media (prefers-reduced-motion: reduce){
+    html{ scroll-behavior: auto; }
+    .crt-overlay, .noise-line, .typewriter-box .cursor{ animation: none; }
+    .fade-in{ opacity: 1; transform: none; transition: none; }
+    .btn{ transition: none; }
+  }
+</style>
+</head>
+<body>
+
+<div class="crt-overlay"></div>
+<div class="crt-vignette"></div>
+<div class="noise-line"></div>
+
+<header>
+  <nav class="nav" aria-label="Навигация по сайту">
+    <div class="logo">SYNTAX<span>_</span>ERROR</div>
+    <button class="burger" id="burgerBtn" type="button" aria-label="Открыть меню" aria-controls="navList" aria-expanded="false">☰</button>
+    <ul id="navList">
+      <li><a href="#about">О игре</a></li>
+      <li><a href="#features">Фичи</a></li>
+      <li><a href="#timeline">Эпохи</a></li>
+      <li><a href="#download">Скачать</a></li>
+    </ul>
+  </nav>
+</header>
+
+<main>
+  <!-- HERO -->
+  <section class="hero">
+    <div class="wrap hero-grid">
+      <div class="hero-text">
+        <span class="eyebrow">// kpanic_studio presents</span>
+        <h1>SYNTAX ERROR:<br><span class="red">Java</span> in the Python</h1>
+
+        <div class="typewriter-box">
+          <span id="typewriter"></span><span class="cursor"></span>
+        </div>
+
+        <div class="btn-row" id="download">
+          <a href="#" class="btn" download>
+            [&nbsp;Download&nbsp;.exe&nbsp;]
+          </a>
+          <a href="#" class="btn red" download>
+            [&nbsp;Download&nbsp;.AppImage&nbsp;]
+          </a>
+        </div>
+      </div>
+
+      <div class="hero-art">
+        <div class="duke-frame">
+          <img id="duke-sprite" src="" alt="Дюк — пиксельный инженер в красной рубашке, главный герой игры">
+        </div>
+        <div class="scroll-cue">▼ SCROLL_DOWN.SH ▼</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ABOUT -->
+  <section class="about" id="about">
+    <div class="wrap">
+      <h2 class="section-title fade-in">&gt; О ПРОЕКТЕ</h2>
+      <p class="section-sub fade-in">Это не очередной курс по синтаксису. Это путешествие во времени.</p>
+
+      <div class="about-grid">
+        <div class="terminal-card fade-in">
+          <div class="terminal-bar">
+            <span class="dot red"></span><span class="dot amber"></span><span class="dot green"></span>
+          </div>
+          <div class="terminal-body">
+            <div>$ java -version</div>
+            <div class="muted">// 1995: James Gosling пишет Oak...</div>
+            <div>$ javac HelloWorld.java</div>
+            <div class="err">error: почему тут столько скобок?</div>
+            <div>$ python learn_history.py --era=1995</div>
+            <div class="muted">> Compiling knowledge...</div>
+            <div>> Понимание получено. ✔</div>
+            <div>_</div>
+          </div>
+        </div>
+
+        <div class="about-text fade-in">
+          <p>Игроки часто ненавидят Java за «многословность» и «лишние скобки», не понимая <strong>почему</strong> язык стал именно таким.</p>
+          <p><strong>Syntax Error</strong> учит не просто писать код — она объясняет <strong>историю</strong> каждого решения: от апплетов 1995 года до Virtual Threads в 2026-м.</p>
+          <p>Ты играешь за <strong>Дюка</strong> — инженера, который путешествует по эпохам Java, пишет настоящий код на Python-движке головоломки, компилирует его и находит ответы в истории IT.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- FEATURES -->
+  <section class="features" id="features">
+    <div class="wrap">
+      <h2 class="section-title fade-in">&gt; ОСОБЕННОСТИ</h2>
+      <p class="section-sub fade-in">33 уровня. 6 эпох. Один язык, который изменил индустрию.</p>
+
+      <div class="features-grid">
+        <div class="feature-card fade-in">
+          <svg class="feature-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+            <circle cx="12" cy="12" r="9"/>
+            <path d="M12 3v18M3 12h18M6 6l12 12M18 6L6 18"/>
+          </svg>
+          <h3>6 ЭПОХ</h3>
+          <p>От рождения Java в 1995 до облачной эры и виртуальных потоков в 2026. Проживи каждый технологический сдвиг.</p>
+        </div>
+
+        <div class="feature-card fade-in">
+          <svg class="feature-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+            <rect x="3" y="4" width="18" height="16" rx="1"/>
+            <path d="M7 9h6M7 13h10M7 17h4"/>
+          </svg>
+          <h3>33 УРОВНЯ</h3>
+          <p>От классического "Hello, World!" до продвинутых Virtual Threads — пошаговая эволюция сложности и возможностей.</p>
+        </div>
+
+        <div class="feature-card fade-in">
+          <svg class="feature-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+            <path d="M8 4L4 8l4 4"/>
+            <path d="M4 8h16"/>
+            <path d="M16 20l4-4-4-4"/>
+            <path d="M20 16H4"/>
+          </svg>
+          <h3>PYTHON VS JAVA</h3>
+          <p>Уникальный режим сравнения: пиши одну логику на двух языках и почувствуй разницу философий на собственной шкуре.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- TIMELINE TEASER -->
+  <section class="timeline" id="timeline">
+    <div class="wrap">
+      <h2 class="section-title fade-in">&gt; ХРОНОЛОГИЯ</h2>
+      <div class="timeline-track fade-in">
+        <div class="era">
+          <div class="year">1995</div>
+          <div class="label">Рождение<br>Oak → Java</div>
+        </div>
+        <div class="era">
+          <div class="year">2000</div>
+          <div class="label">Эра<br>апплетов</div>
+        </div>
+        <div class="era">
+          <div class="year">2004</div>
+          <div class="label">Java 5<br>Generics</div>
+        </div>
+        <div class="era">
+          <div class="year">2014</div>
+          <div class="label">Java 8<br>Lambdas</div>
+        </div>
+        <div class="era">
+          <div class="year">2021</div>
+          <div class="label">Java 17<br>Records</div>
+        </div>
+        <div class="era">
+          <div class="year">2026</div>
+          <div class="label">Virtual<br>Threads</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CTA -->
+  <section class="cta">
+    <div class="wrap fade-in">
+      <h2>&gt; READY_TO_COMPILE.exe</h2>
+      <p>Присоединяйся к Дюку и перепиши свою историю отношений с Java.</p>
+      <div class="btn-row" style="justify-content:center;">
+        <a href="#" class="btn" download>[ Download .exe ]</a>
+        <a href="#" class="btn red" download>[ Download .AppImage ]</a>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap">
+    <div class="footer-grid">
+      <div class="footer-brand">
+        <div class="logo">SYNTAX<span>_</span>ERROR</div>
+        <p>Игра-головоломка о том, как Python учит нас понимать и уважать Java. Сделано с ❤ и кофеином.</p>
+      </div>
+
+      <div class="footer-links">
+        <div class="footer-col">
+          <h4>COMMUNITY</h4>
+          <ul>
+            <li>
+              <a href="https://github.com/" target="_blank" rel="noopener">
+                <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 .5C5.73.5.5 5.73.5 12.02c0 5.1 3.3 9.42 7.88 10.95.58.1.79-.25.79-.56 0-.27-.01-1.17-.02-2.12-3.2.7-3.88-1.37-3.88-1.37-.52-1.33-1.28-1.68-1.28-1.68-1.04-.71.08-.7.08-.7 1.15.08 1.76 1.18 1.76 1.18 1.03 1.76 2.7 1.25 3.36.96.1-.75.4-1.25.73-1.54-2.55-.29-5.24-1.28-5.24-5.68 0-1.26.45-2.29 1.18-3.1-.12-.29-.51-1.46.11-3.05 0 0 .97-.31 3.18 1.18a11 11 0 0 1 5.8 0c2.2-1.49 3.17-1.18 3.17-1.18.63 1.59.24 2.76.12 3.05.74.81 1.18 1.84 1.18 3.1 0 4.41-2.7 5.38-5.26 5.67.42.36.78 1.07.78 2.16 0 1.56-.01 2.82-.01 3.2 0 .31.2.67.8.56A10.52 10.52 0 0 0 23.5 12c0-6.3-5.23-11.5-11.5-11.5z"/></svg>
+                GitHub
+              </a>
+            </li>
+            <li>
+              <a href="https://discord.com/" target="_blank" rel="noopener">
+                <svg viewBox="0 0 24 24" fill="currentColor"><path d="M20.3 4.4A19.5 19.5 0 0 0 15.6 3c-.2.4-.5 1-.7 1.4a18 18 0 0 0-5.8 0C8.9 4 8.6 3.4 8.4 3a19.4 19.4 0 0 0-4.7 1.4C1.4 8.3.8 12.1 1 15.9a19.6 19.6 0 0 0 5.9 3c.5-.6.9-1.3 1.2-2a12.7 12.7 0 0 1-1.9-.9l.5-.4a14 14 0 0 0 11.6 0l.5.4c-.6.3-1.2.6-1.9.9.3.7.7 1.4 1.2 2a19.5 19.5 0 0 0 5.9-3c.3-4.4-.8-8.1-2.7-11.5ZM8.7 13.6c-.9 0-1.6-.8-1.6-1.8s.7-1.8 1.6-1.8 1.6.8 1.6 1.8-.7 1.8-1.6 1.8Zm6.6 0c-.9 0-1.6-.8-1.6-1.8s.7-1.8 1.6-1.8 1.6.8 1.6 1.8-.7 1.8-1.6 1.8Z"/></svg>
+                Discord
+              </a>
+            </li>
+          </ul>
+        </div>
+        <div class="footer-col">
+          <h4>PROJECT</h4>
+          <ul>
+            <li><a href="#about">О игре</a></li>
+            <li><a href="#features">Фичи</a></li>
+            <li><a href="#download">Скачать</a></li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <div class="footer-bottom">
+      © 2026 KPanic Studio. Все права защищены. Сделано на Python, вдохновлено Java.
+    </div>
+  </div>
+</footer>
+
+<script>
+  // ---------- Burger menu ----------
+  const burgerBtn = document.getElementById('burgerBtn');
+  const navList = document.getElementById('navList');
+
+  function setMenuOpen(open) {
+    navList.classList.toggle('open', open);
+    burgerBtn.setAttribute('aria-expanded', String(open));
+    burgerBtn.setAttribute('aria-label', open ? 'Закрыть меню' : 'Открыть меню');
+  }
+
+  burgerBtn.addEventListener('click', () => {
+    setMenuOpen(!navList.classList.contains('open'));
+  });
+  navList.querySelectorAll('a').forEach(link => {
+    link.addEventListener('click', () => setMenuOpen(false));
+  });
+  document.addEventListener('keydown', event => {
+    if (event.key === 'Escape' && navList.classList.contains('open')) {
+      setMenuOpen(false);
+      burgerBtn.focus();
+    }
+  });
+  window.matchMedia('(min-width: 641px)').addEventListener('change', event => {
+    if (event.matches) setMenuOpen(false);
+  });
+
+  // ---------- Typewriter effect ----------
+  const lines = [
+    "> 1995: Oak становится Java...",
+    "> 'Write Once, Run Anywhere' — но почему так много кода?",
+    "> Загрузка истории языков программирования...",
+    "> Compiling... понимание получено.",
+    "> Добро пожаловать в Syntax Error."
+  ];
+  const twEl = document.getElementById('typewriter');
+  let lineIndex = 0, charIndex = 0, deleting = false;
+
+  function typeLoop(){
+    const current = lines[lineIndex];
+    if(!deleting){
+      charIndex++;
+      twEl.textContent = current.slice(0, charIndex);
+      if(charIndex === current.length){
+        deleting = true;
+        setTimeout(typeLoop, 1800);
+        return;
+      }
+    } else {
+      charIndex--;
+      twEl.textContent = current.slice(0, charIndex);
+      if(charIndex === 0){
+        deleting = false;
+        lineIndex = (lineIndex + 1) % lines.length;
+      }
+    }
+    setTimeout(typeLoop, deleting ? 25 : 45);
+  }
+  typeLoop();
+
+  // ---------- Intersection Observer fade-in ----------
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if(entry.isIntersecting){
+        entry.target.classList.add('visible');
+        observer.unobserve(entry.target);
+      }
+    });
+  }, { threshold: 0.15 });
+
+  document.querySelectorAll('.fade-in').forEach(el => observer.observe(el));
+</script>
+
+</body>
+</html>

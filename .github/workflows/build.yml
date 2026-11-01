@@ -30,16 +30,23 @@ jobs:
         distribution: 'temurin'
         java-version: '21'
 
-    - name: Build Java Mod
+    - name: Compile Java (Manual)
       run: |
-        ./gradlew build
-      working-directory: ./Cursed-Recode-main
-      shell: bash
+        # Ищем все .java файлы и компилируем их
+        $files = Get-ChildItem -Path "Cursed-Recode-main/src" -Recurse -Filter *.java | ForEach-Object { $_.FullName }
+        javac -cp "Cursed-Recode-main/libs/*" -d "Cursed-Recode-main/out" $files
+      shell: pwsh
+
+    - name: Package JAR
+      run: |
+        # Упаковываем скомпилированные классы в .jar
+        jar -cf "CursedRecode.jar" -C "Cursed-Recode-main/out" .
+      shell: pwsh
 
     - name: Upload Artifact
       uses: actions/upload-artifact@v4
       with:
         name: Cursed-Recode-Build
         path: |
-          Cursed-Recode-main/build/libs/*.jar
+          CursedRecode.jar
           Cursed-Recode-main/native/target/release/*.dll
